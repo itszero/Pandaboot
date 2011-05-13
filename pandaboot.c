@@ -48,6 +48,25 @@ int help(char **argv)
   return 0;
 }
 
+int usb_send_binary(libusb_device_handle *hdev, void *data, int sz)
+{
+  while (sz > 0)
+  {
+    int len = (sz > 4096 ? 4096 : sz);
+    int usz = 0;
+
+    if (libusb_bulk_transfer(hdev, 0x01, data, len, &usz, 0) != 0)
+    {
+      printf(LOG_FAIL "USB transfer fail [data]\n");
+      return -1;
+    }
+
+    sz -= len;
+    data += len;
+  }
+  return 0;
+}
+
 /* from usbboot.c (omap4boot) */
 void *load_file(const char *file, unsigned *sz)
 {
@@ -143,7 +162,7 @@ int main(int argc, char **argv)
     printf(LOG_FAIL "USB transfer fail [size]\n");
     return -1;
   }
-  if (libusb_bulk_transfer(hdev, 0x01, data, msg_size, &sz, 0) != 0)
+  if (usb_send_binary(hdev, data, msg_size) != 0)
   {
     printf(LOG_FAIL "USB transfer fail [data]\n");
     return -1;
@@ -175,7 +194,7 @@ int main(int argc, char **argv)
     printf(LOG_FAIL "USB transfer fail [size]\n");
     return -1;
   }
-  if (libusb_bulk_transfer(hdev, 0x01, data, msg_size, &sz, 0) != 0)
+  if (usb_send_binary(hdev, data, msg_size) != 0)
   {
     printf(LOG_FAIL "USB transfer fail [data]\n");
     return -1;
